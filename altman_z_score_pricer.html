@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Altman Z-Score Pricer</title>
+  <style>
+    :root{--bg:#0f1724;--card:#0b1220;--muted:#9aa4b2;--accent:#7c3aed;--safe:#a6f0a6;--grey:#d3d3d3;--distress:#f0a6a6}
+    body{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial; margin:0; background:linear-gradient(180deg,#071127 0%, #071828 100%); color:#e6eef6}
+    .wrap{max-width:920px;margin:36px auto;padding:28px;border-radius:14px;background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));box-shadow:0 10px 30px rgba(2,6,23,0.7)}
+    h1{margin:0 0 8px;font-size:18px}
+    p.lead{text-align:justify;margin:0 0 18px;color:var(--muted)}
+    .grid{display:grid;grid-template-columns:1fr 360px;gap:20px}
+    .card{background:rgba(255,255,255,0.02);padding:16px;border-radius:12px;font-family:inherit}
+
+    /* Align labels and inputs */
+    .form-table{display:table;width:100%}
+    .form-row{display:table-row}
+    .form-label, .form-input{display:table-cell;vertical-align:middle;padding:6px 8px}
+    .form-label{text-align:right;width:45%;color:var(--muted);font-size:13px;font-weight:bold}
+    .form-input input{width:100%;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit;font-size:14px}
+
+    .full{grid-column:1/-1}
+    button{background:linear-gradient(90deg,var(--accent),#4f46e5);border:none;padding:10px 14px;border-radius:10px;color:white;font-weight:600;cursor:pointer}
+    .result{padding:16px;border-radius:10px;background:linear-gradient(90deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));margin-bottom:12px}
+    .score{font-size:36px;font-weight:700;color:var(--accent)}
+    .interpret{font-weight:600}
+    small.note{color:var(--muted)}
+    footer{margin-top:14px;color:var(--muted);font-size:13px}
+    .help{font-size:13px;color:var(--muted);margin-top:8px;font-style:italic}
+    .inline{display:flex;gap:8px;align-items:center}
+    .label-italic{font-style:italic; color:var(--muted)}
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <h1>Altman Z‑Score Pricer</h1>
+    <p class="lead" style="text-align:justify;">Enter company financials (in the same currency) and pick the model. The calculator supports: public manufacturing (original), private manufacturing (Z'), and private non-manufacturing (Z''). Results show score and a brief interpretation.</p>
+
+    <div class="grid">
+      <section class="card">
+        <label class="label-italic" for="model">Model</label>
+        <select id="model" aria-label="Select Altman model">
+          <option value="public">Public manufacturing (Original, 1968)</option>
+          <option value="private">Private manufacturing (Z' - 1983)</option>
+          <option value="nonman">Private non-manufacturing (Z'' - non-manufacturing)</option>
+        </select>
+
+        <div id="inputs" style="margin-top:14px" class="form-table"></div>
+
+        <div style="margin-top:12px" class="inline">
+          <button id="calc">Calculate Z‑Score</button>
+          <button id="clear" style="background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted);font-weight:600">Clear</button>
+        </div>
+
+        <div class="help">Tip: enter absolute numbers (not ratios). The calculator computes ratios internally. Use consistent currency and date ranges.</div>
+      </section>
+
+      <aside class="card">
+        <div class="result">
+          <div>Model: <span id="modelLabel" class="label-italic">Public manufacturing</span></div>
+          <div style="margin-top:10px"><span class="score" id="zscore">–</span></div>
+          <div style="margin-top:8px"><span class="interpret" id="interpret">Enter values and press Calculate.</span></div>
+          <div style="margin-top:8px"><small class="note">Zones: <span style="color:var(--safe)">Safe</span> • <span style="color:var(--grey)">Grey</span> • <span style="color:var(--distress)">Distress</span></small></div>
+        </div>
+
+        <div style="margin-top:12px">
+          <span class="label-italic">Breakdown</span>
+          <div id="breakdown" style="margin-top:8px;color:var(--muted);font-size:14px">—</div>
+        </div>
+
+        <footer>
+          Formulas implemented:
+          <ul style="margin:8px 0 0 18px;color:var(--muted)">
+            <li>Public: Z = 1.2X1 + 1.4X2 + 3.3X3 + 0.6X4 + 1.0X5</li>
+            <li>Private (Z'): Z' = 0.717X1 + 0.847X2 + 3.107X3 + 0.420X4 + 0.998X5 (book equity)</li>
+            <li>Non-manuf (Z''): Z'' = 6.56X1 + 3.26X2 + 6.72X3 + 1.05X4</li>
+          </ul>
+        </footer>
+      </aside>
+    </div>
+  </main>
+
+  <script>
+    const templates={
+      public:[{id:'workingCapital',label:'Working capital'},{id:'retainedEarnings',label:'Retained earnings'},{id:'ebit',label:'EBIT'},{id:'marketEquity',label:'Market value of equity'},{id:'totalLiabilities',label:'Total liabilities'},{id:'sales',label:'Sales / Revenue'},{id:'totalAssets',label:'Total assets'}],
+      private:[{id:'workingCapital',label:'Working capital'},{id:'retainedEarnings',label:'Retained earnings'},{id:'ebit',label:'EBIT'},{id:'bookEquity',label:'Book value of equity'},{id:'totalLiabilities',label:'Total liabilities'},{id:'sales',label:'Sales / Revenue'},{id:'totalAssets',label:'Total assets'}],
+      nonman:[{id:'workingCapital',label:'Working capital'},{id:'retainedEarnings',label:'Retained earnings'},{id:'ebit',label:'EBIT'},{id:'sales',label:'Sales / Revenue'},{id:'totalAssets',label:'Total assets'},{id:'totalLiabilities',label:'Total liabilities'}]
+    };
+
+    const inputsEl=document.getElementById('inputs'), modelSelect=document.getElementById('model'), modelLabel=document.getElementById('modelLabel');
+
+    function renderInputs(){
+      const model=modelSelect.value;
+      modelLabel.textContent=modelSelect.options[modelSelect.selectedIndex].text;
+      inputsEl.innerHTML='';
+      templates[model].forEach(f=>{
+        const row=document.createElement('div');
+        row.className='form-row';
+        const label=document.createElement('div');
+        label.className='form-label';
+        label.textContent=f.label;
+        label.style.fontWeight='bold';
+        const inputContainer=document.createElement('div');
+        inputContainer.className='form-input';
+        const input=document.createElement('input');
+        input.type='number';
+        input.step='any';
+        input.id=f.id;
+        input.placeholder='0';
+        inputContainer.appendChild(input);
+        row.appendChild(label);
+        row.appendChild(inputContainer);
+        inputsEl.appendChild(row);
+      });
+    }
+
+    modelSelect.addEventListener('change',renderInputs);
+    renderInputs();
+
+    document.getElementById('clear').addEventListener('click',()=>{
+      document.querySelectorAll('#inputs input').forEach(i=>i.value='');
+      document.getElementById('zscore').textContent='–';
+      document.getElementById('interpret').textContent='Enter values and press Calculate.';
+      document.getElementById('breakdown').textContent='—';
+    });
+
+    document.getElementById('calc').addEventListener('click',()=>{
+      const model=modelSelect.value;
+      const get=id=>parseFloat(document.getElementById(id)?.value||NaN);
+      const WC=get('workingCapital'),RE=get('retainedEarnings'),EBIT=get('ebit'),TA=get('totalAssets'),SALES=get('sales'),TL=get('totalLiabilities'),ME=get('marketEquity'),BE=get('bookEquity');
+      function safeDiv(a,b){return(isFinite(a)&&isFinite(b)&&b!==0)?a/b:NaN}
+      let z=null,breakdownText='';
+      if(model==='public'){
+        const X1=safeDiv(WC,TA),X2=safeDiv(RE,TA),X3=safeDiv(EBIT,TA),X4=safeDiv(ME,TL),X5=safeDiv(SALES,TA);
+        z=1.2*X1+1.4*X2+3.3*X3+0.6*X4+1.0*X5;
+        breakdownText=`X1=${X1.toFixed(3)}, X2=${X2.toFixed(3)}, X3=${X3.toFixed(3)}, X4=${X4.toFixed(3)}, X5=${X5.toFixed(3)}`;
+        var interp=interpretPublic(z);
+      } else if(model==='private'){
+        const X1=safeDiv(WC,TA),X2=safeDiv(RE,TA),X3=safeDiv(EBIT,TA),X4=safeDiv(BE,TL),X5=safeDiv(SALES,TA);
+        z=0.717*X1+0.847*X2+3.107*X3+0.420*X4+0.998*X5;
+        breakdownText=`X1=${X1.toFixed(3)}, X2=${X2.toFixed(3)}, X3=${X3.toFixed(3)}, X4=${X4.toFixed(3)}, X5=${X5.toFixed(3)}`;
+        var interp=interpretZprime(z);
+      } else if(model==='nonman'){
+        const X1=safeDiv(WC,TA),X2=safeDiv(RE,TA),X3=safeDiv(EBIT,TA),X4=safeDiv(SALES,TA);
+        z=6.56*X1+3.26*X2+6.72*X3+1.05*X4;
+        breakdownText=`X1=${X1.toFixed(3)}, X2=${X2.toFixed(3)}, X3=${X3.toFixed(3)}, X4=${X4.toFixed(3)}`;
+        var interp=interpretNonMan(z);
+      }
+      const zEl=document.getElementById('zscore');
+      zEl.textContent=isFinite(z)?z.toFixed(3):'–';
+      if(interp.includes('Safe')) zEl.style.color='var(--safe)';
+      else if(interp.includes('Grey')) zEl.style.color='var(--grey)';
+      else if(interp.includes('Distress')||interp.includes('high risk')) zEl.style.color='var(--distress)';
+      document.getElementById('breakdown').textContent=breakdownText;
+      document.getElementById('interpret').textContent=interp;
+    });
+
+    function interpretPublic(z){if(!isFinite(z))return'Insufficient/invalid inputs.';if(z>2.99)return'Safe zone — low bankruptcy risk (Z > 2.99).';if(z>=1.81)return'Grey zone — moderate risk; further analysis recommended (1.81 ≤ Z ≤ 2.99).';return'Distress zone — high risk of bankruptcy (Z < 1.81).'}
+    function interpretZprime(z){if(!isFinite(z))return'Insufficient/invalid inputs.';if(z>2.9)return"Safe zone — low bankruptcy risk (Z' > 2.90).";if(z>=1.23)return"Grey zone — moderate risk (1.23 ≤ Z' ≤ 2.90).";return"Distress zone — high risk of bankruptcy (Z' < 1.23)."}
+    function interpretNonMan(z){if(!isFinite(z))return'Insufficient/invalid inputs.';if(z>2.6)return'Likely safe (score suggests lower bankruptcy risk).';if(z>=1.1)return'Grey zone — moderate risk; consider digging into cash flow and liabilities.';return'Distress zone — high risk of bankruptcy.'}
+  </script>
+</body>
+</html>
