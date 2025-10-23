@@ -5,24 +5,24 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Altman Z-Score Pricer</title>
   <style>
-    :root{--bg:#0f1724;--card:#0b1220;--muted:#9aa4b2;--accent:#7c3aed;--safe:#a6f0a6;--grey:#d3d3d3;--distress:#f0a6a6}
-    body{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial; margin:0; background:linear-gradient(180deg,#071127 0%, #071828 100%); color:#e6eef6}
-    .wrap{max-width:920px;margin:36px auto;padding:28px;border-radius:14px;background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));box-shadow:0 10px 30px rgba(2,6,23,0.7)}
-    h1{margin:0 0 8px;font-size:18px}
+    :root{--bg:#ffffff;--card:#f5f5f5;--muted:#555555;--accent:#7c3aed;--safe:#a6f0a6;--grey:#d3d3d3;--distress:#f0a6a6}
+    body{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial; margin:0; background:#ffffff; color:#111111}
+    .wrap{max-width:920px;margin:36px auto;padding:28px;border-radius:14px;background:#ffffff;box-shadow:0 4px 20px rgba(0,0,0,0.05)}
+    h1{margin:0 0 8px;font-size:18px;color:#111111}
     p.lead{text-align:justify;margin:0 0 18px;color:var(--muted)}
     .grid{display:grid;grid-template-columns:1fr 360px;gap:20px}
-    .card{background:rgba(255,255,255,0.02);padding:16px;border-radius:12px;font-family:inherit}
+    .card{background:#f5f5f5;padding:16px;border-radius:12px;font-family:inherit; color:#111111}
 
     /* Align labels and inputs */
     .form-table{display:table;width:100%}
     .form-row{display:table-row}
     .form-label, .form-input{display:table-cell;vertical-align:middle;padding:6px 8px}
     .form-label{text-align:right;width:45%;color:var(--muted);font-size:13px;font-weight:bold}
-    .form-input input{width:100%;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit;font-size:14px}
+    .form-input input{width:100%;padding:8px;border-radius:6px;border:1px solid #cccccc;background:#ffffff;color:#111111;font-size:14px}
 
     .full{grid-column:1/-1}
     button{background:linear-gradient(90deg,var(--accent),#4f46e5);border:none;padding:10px 14px;border-radius:10px;color:white;font-weight:600;cursor:pointer}
-    .result{padding:16px;border-radius:10px;background:linear-gradient(90deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));margin-bottom:12px}
+    .result{padding:16px;border-radius:10px;background:#ffffff;margin-bottom:12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05)}
     .score{font-size:36px;font-weight:700;color:var(--accent)}
     .interpret{font-weight:600}
     small.note{color:var(--muted)}
@@ -50,7 +50,7 @@
 
         <div style="margin-top:12px" class="inline">
           <button id="calc">Calculate Z‑Score</button>
-          <button id="clear" style="background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted);font-weight:600">Clear</button>
+          <button id="clear" style="background:transparent;border:1px solid #cccccc;color:var(--muted);font-weight:600">Clear</button>
         </div>
 
         <div class="help">Tip: enter absolute numbers (not ratios). The calculator computes ratios internally. Use consistent currency and date ranges.</div>
@@ -157,7 +157,7 @@
     });
 
     function interpretPublic(z){if(!isFinite(z))return'Insufficient/invalid inputs.';if(z>2.99)return'Safe zone — low bankruptcy risk (Z > 2.99).';if(z>=1.81)return'Grey zone — moderate risk; further analysis recommended (1.81 ≤ Z ≤ 2.99).';return'Distress zone — high risk of bankruptcy (Z < 1.81).'}
-    function interpretZprime(z){if(!isFinite(z))return'Insufficient/invalid inputs.';if(z>2.9)return"Safe zone — low bankruptcy risk (Z' > 2.90).";if(z>=1.23)return"Grey zone — moderate risk (1.23 ≤ Z' ≤ 2.90).";return"Distress zone — high risk of bankruptcy (Z' < 1.23)."}
+    function interpretZprime(z){if(!isFinite(z))return'Insufficient/invalid inputs.';if(z>2.9)return"Safe zone — low bankruptcy risk (Z' > 2.90).";if(z>=1.23)return"Grey zone — moderate risk (1.23 ≤ Z' ≤ 2.90).";return"Distress zone — high risk (Z' < 1.23)."}
     function interpretNonMan(z){if(!isFinite(z))return'Insufficient/invalid inputs.';if(z>2.6)return'Likely safe (score suggests lower bankruptcy risk).';if(z>=1.1)return'Grey zone — moderate risk; consider digging into cash flow and liabilities.';return'Distress zone — high risk of bankruptcy.'}
   </script>
 </body>
