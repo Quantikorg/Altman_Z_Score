@@ -5,20 +5,20 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Altman Z-Score Pricer</title>
   <style>
-    :root{--bg:#ffffff;--card:#f5f5f5;--muted:#555555;--accent:#7c3aed;--safe:#a6f0a6;--grey:#d3d3d3;--distress:#f0a6a6}
-    body{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial; margin:0; background:#ffffff; color:#111111}
+    :root{--bg:#ffffff;--card:#f5f5f5;--muted:#555555;--accent:#7c3aed;--safe:#008000;--grey:#808080;--distress:#ff0000;--dropdown-bg:#fff8c4;}
+    body{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial; margin:0; background:#ffffff; color:#111111;}
     .wrap{max-width:920px;margin:36px auto;padding:28px;border-radius:14px;background:#ffffff;box-shadow:0 4px 20px rgba(0,0,0,0.05)}
     h1{margin:0 0 8px;font-size:18px;color:#111111}
     p.lead{text-align:justify;margin:0 0 18px;color:var(--muted)}
     .grid{display:grid;grid-template-columns:1fr 360px;gap:20px}
     .card{background:#f5f5f5;padding:16px;border-radius:12px;font-family:inherit; color:#111111}
 
-    /* Align labels and inputs */
     .form-table{display:table;width:100%}
     .form-row{display:table-row}
     .form-label, .form-input{display:table-cell;vertical-align:middle;padding:6px 8px}
     .form-label{text-align:right;width:45%;color:var(--muted);font-size:13px;font-weight:bold}
-    .form-input input{width:100%;padding:8px;border-radius:6px;border:1px solid #cccccc;background:#ffffff;color:#111111;font-size:14px}
+    .form-input input, .form-input select{width:100%;padding:8px;border-radius:6px;border:1px solid #cccccc;background:#ffffff;color:#111111;font-size:13px;box-sizing:border-box;}
+    .form-input select{background-color:var(--dropdown-bg);}
 
     .full{grid-column:1/-1}
     button{background:linear-gradient(90deg,var(--accent),#4f46e5);border:none;padding:10px 14px;border-radius:10px;color:white;font-weight:600;cursor:pointer}
@@ -29,7 +29,7 @@
     footer{margin-top:14px;color:var(--muted);font-size:13px}
     .help{font-size:13px;color:var(--muted);margin-top:8px;font-style:italic}
     .inline{display:flex;gap:8px;align-items:center}
-    .label-italic{font-style:italic; color:var(--muted)}
+    .form-label-bold{font-weight:bold; text-align:right; width:45%; display:table-cell; vertical-align:middle; padding:6px 8px; color:var(--muted); font-size:13px;}
   </style>
 </head>
 <body>
@@ -39,12 +39,16 @@
 
     <div class="grid">
       <section class="card">
-        <label class="label-italic" for="model">Model</label>
-        <select id="model" aria-label="Select Altman model">
-          <option value="public">Public manufacturing (Original, 1968)</option>
-          <option value="private">Private manufacturing (Z' - 1983)</option>
-          <option value="nonman">Private non-manufacturing (Z'' - non-manufacturing)</option>
-        </select>
+        <div class="form-table">
+          <div class="form-row">
+            <div class="form-label-bold">Model</div>
+            <div class="form-input"><select id="model" aria-label="Select Altman model">
+              <option value="public">Public manufacturing (Original, 1968)</option>
+              <option value="private">Private manufacturing (Z' - 1983)</option>
+              <option value="nonman">Private non-manufacturing (Z'' - non-manufacturing)</option>
+            </select></div>
+          </div>
+        </div>
 
         <div id="inputs" style="margin-top:14px" class="form-table"></div>
 
@@ -58,14 +62,14 @@
 
       <aside class="card">
         <div class="result">
-          <div>Model: <span id="modelLabel" class="label-italic">Public manufacturing</span></div>
+          <div>Model: <span id="modelLabel" class="form-label-bold">Public manufacturing</span></div>
           <div style="margin-top:10px"><span class="score" id="zscore">–</span></div>
           <div style="margin-top:8px"><span class="interpret" id="interpret">Enter values and press Calculate.</span></div>
           <div style="margin-top:8px"><small class="note">Zones: <span style="color:var(--safe)">Safe</span> • <span style="color:var(--grey)">Grey</span> • <span style="color:var(--distress)">Distress</span></small></div>
         </div>
 
         <div style="margin-top:12px">
-          <span class="label-italic">Breakdown</span>
+          <span class="form-label-bold">Breakdown</span>
           <div id="breakdown" style="margin-top:8px;color:var(--muted);font-size:14px">—</div>
         </div>
 
@@ -124,41 +128,10 @@
       document.getElementById('interpret').textContent='Enter values and press Calculate.';
       document.getElementById('breakdown').textContent='—';
     });
-
-    document.getElementById('calc').addEventListener('click',()=>{
-      const model=modelSelect.value;
-      const get=id=>parseFloat(document.getElementById(id)?.value||NaN);
-      const WC=get('workingCapital'),RE=get('retainedEarnings'),EBIT=get('ebit'),TA=get('totalAssets'),SALES=get('sales'),TL=get('totalLiabilities'),ME=get('marketEquity'),BE=get('bookEquity');
-      function safeDiv(a,b){return(isFinite(a)&&isFinite(b)&&b!==0)?a/b:NaN}
-      let z=null,breakdownText='';
-      if(model==='public'){
-        const X1=safeDiv(WC,TA),X2=safeDiv(RE,TA),X3=safeDiv(EBIT,TA),X4=safeDiv(ME,TL),X5=safeDiv(SALES,TA);
-        z=1.2*X1+1.4*X2+3.3*X3+0.6*X4+1.0*X5;
-        breakdownText=`X1=${X1.toFixed(3)}, X2=${X2.toFixed(3)}, X3=${X3.toFixed(3)}, X4=${X4.toFixed(3)}, X5=${X5.toFixed(3)}`;
-        var interp=interpretPublic(z);
-      } else if(model==='private'){
-        const X1=safeDiv(WC,TA),X2=safeDiv(RE,TA),X3=safeDiv(EBIT,TA),X4=safeDiv(BE,TL),X5=safeDiv(SALES,TA);
-        z=0.717*X1+0.847*X2+3.107*X3+0.420*X4+0.998*X5;
-        breakdownText=`X1=${X1.toFixed(3)}, X2=${X2.toFixed(3)}, X3=${X3.toFixed(3)}, X4=${X4.toFixed(3)}, X5=${X5.toFixed(3)}`;
-        var interp=interpretZprime(z);
-      } else if(model==='nonman'){
-        const X1=safeDiv(WC,TA),X2=safeDiv(RE,TA),X3=safeDiv(EBIT,TA),X4=safeDiv(SALES,TA);
-        z=6.56*X1+3.26*X2+6.72*X3+1.05*X4;
-        breakdownText=`X1=${X1.toFixed(3)}, X2=${X2.toFixed(3)}, X3=${X3.toFixed(3)}, X4=${X4.toFixed(3)}`;
-        var interp=interpretNonMan(z);
-      }
-      const zEl=document.getElementById('zscore');
-      zEl.textContent=isFinite(z)?z.toFixed(3):'–';
-      if(interp.includes('Safe')) zEl.style.color='var(--safe)';
-      else if(interp.includes('Grey')) zEl.style.color='var(--grey)';
-      else if(interp.includes('Distress')||interp.includes('high risk')) zEl.style.color='var(--distress)';
-      document.getElementById('breakdown').textContent=breakdownText;
-      document.getElementById('interpret').textContent=interp;
-    });
-
-    function interpretPublic(z){if(!isFinite(z))return'Insufficient/invalid inputs.';if(z>2.99)return'Safe zone — low bankruptcy risk (Z > 2.99).';if(z>=1.81)return'Grey zone — moderate risk; further analysis recommended (1.81 ≤ Z ≤ 2.99).';return'Distress zone — high risk of bankruptcy (Z < 1.81).'}
-    function interpretZprime(z){if(!isFinite(z))return'Insufficient/invalid inputs.';if(z>2.9)return"Safe zone — low bankruptcy risk (Z' > 2.90).";if(z>=1.23)return"Grey zone — moderate risk (1.23 ≤ Z' ≤ 2.90).";return"Distress zone — high risk (Z' < 1.23)."}
-    function interpretNonMan(z){if(!isFinite(z))return'Insufficient/invalid inputs.';if(z>2.6)return'Likely safe (score suggests lower bankruptcy risk).';if(z>=1.1)return'Grey zone — moderate risk; consider digging into cash flow and liabilities.';return'Distress zone — high risk of bankruptcy.'}
   </script>
+
+  <footer style="margin:40px auto 20px;max-width:920px;text-align:center;font-size:12px;color:#777;font-style:italic;">
+    © Quantik.org. All rights reserved. This model, including its code and associated intellectual property, is the exclusive property of Quantik.org and may not be copied, distributed, or replicated without prior written consent. Use of this calculator implies acceptance of these terms.
+  </footer>
 </body>
 </html>
