@@ -128,8 +128,43 @@
       document.getElementById('interpret').textContent='Enter values and press Calculate.';
       document.getElementById('breakdown').textContent='—';
     });
-  </script>
+  ;
 
+    document.getElementById('calc').addEventListener('click',()=>{
+      const model=modelSelect.value;
+      const get=id=>parseFloat(document.getElementById(id)?.value||NaN);
+      const WC=get('workingCapital'),RE=get('retainedEarnings'),EBIT=get('ebit'),TA=get('totalAssets'),SALES=get('sales'),TL=get('totalLiabilities'),ME=get('marketEquity'),BE=get('bookEquity');
+      function safeDiv(a,b){return(isFinite(a)&&isFinite(b)&&b!==0)?a/b:NaN}
+      let z=null,breakdownText='';
+      if(model==='public'){
+        const X1=safeDiv(WC,TA),X2=safeDiv(RE,TA),X3=safeDiv(EBIT,TA),X4=safeDiv(ME,TL),X5=safeDiv(SALES,TA);
+        z=1.2*X1+1.4*X2+3.3*X3+0.6*X4+1.0*X5;
+        breakdownText=`X1=${X1.toFixed(3)}, X2=${X2.toFixed(3)}, X3=${X3.toFixed(3)}, X4=${X4.toFixed(3)}, X5=${X5.toFixed(3)}`;
+        var interp=interpretPublic(z);
+      } else if(model==='private'){
+        const X1=safeDiv(WC,TA),X2=safeDiv(RE,TA),X3=safeDiv(EBIT,TA),X4=safeDiv(BE,TL),X5=safeDiv(SALES,TA);
+        z=0.717*X1+0.847*X2+3.107*X3+0.420*X4+0.998*X5;
+        breakdownText=`X1=${X1.toFixed(3)}, X2=${X2.toFixed(3)}, X3=${X3.toFixed(3)}, X4=${X4.toFixed(3)}, X5=${X5.toFixed(3)}`;
+        var interp=interpretZprime(z);
+      } else if(model==='nonman'){
+        const X1=safeDiv(WC,TA),X2=safeDiv(RE,TA),X3=safeDiv(EBIT,TA),X4=safeDiv(SALES,TA);
+        z=6.56*X1+3.26*X2+6.72*X3+1.05*X4;
+        breakdownText=`X1=${X1.toFixed(3)}, X2=${X2.toFixed(3)}, X3=${X3.toFixed(3)}, X4=${X4.toFixed(3)}`;
+        var interp=interpretNonMan(z);
+      }
+      const zEl=document.getElementById('zscore');
+      zEl.textContent=isFinite(z)?z.toFixed(3):'–';
+      if(interp.includes('Safe')) zEl.style.color='var(--safe)';
+      else if(interp.includes('Grey')) zEl.style.color='var(--grey)';
+      else if(interp.includes('Distress')||interp.includes('high risk')) zEl.style.color='var(--distress)';
+      document.getElementById('breakdown').textContent=breakdownText;
+      document.getElementById('interpret').textContent=interp;
+    });
+
+    function interpretPublic(z){if(!isFinite(z))return'Insufficient/invalid inputs.';if(z>2.99)return'Safe zone — low bankruptcy risk (Z > 2.99).';if(z>=1.81)return'Grey zone — moderate risk; further analysis recommended (1.81 ≤ Z ≤ 2.99).';return'Distress zone — high risk of bankruptcy (Z < 1.81).'}
+    function interpretZprime(z){if(!isFinite(z))return'Insufficient/invalid inputs.';if(z>2.9)return"Safe zone — low bankruptcy risk (Z' > 2.90).";if(z>=1.23)return"Grey zone — moderate risk (1.23 ≤ Z' ≤ 2.90).";return"Distress zone — high risk (Z' < 1.23)."}
+    function interpretNonMan(z){if(!isFinite(z))return'Insufficient/invalid inputs.';if(z>2.6)return'Likely safe (score suggests lower bankruptcy risk).';if(z>=1.1)return'Grey zone — moderate risk; consider digging into cash flow and liabilities.';return'Distress zone — high risk of bankruptcy.'}
+  </script>
   <footer style="margin:40px auto 20px;max-width:920px;text-align:center;font-size:12px;color:#777;font-style:italic;">
     © Quantik.org. All rights reserved. This model, including its code and associated intellectual property, is the exclusive property of Quantik.org and may not be copied, distributed, or replicated without prior written consent. Use of this calculator implies acceptance of these terms.
   </footer>
