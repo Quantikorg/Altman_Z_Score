@@ -6,7 +6,8 @@
   <title>Altman Z-Score Pricer</title>
   <style>
     :root{--bg:#ffffff;--card:#f5f5f5;--muted:#555555;--accent:#7c3aed;--safe:#a6f0a6;--grey:#d3d3d3;--distress:#f0a6a6}
-    body{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial; margin:0; background:#ffffff; color:#111111}
+    body{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial; margin:0; background:#ffffff; color:#111111; position:relative;}
+    .logo-container{position:absolute;top:20px;right:20px;width:120px;height:auto;z-index:10;}
     .wrap{max-width:920px;margin:36px auto;padding:28px;border-radius:14px;background:#ffffff;box-shadow:0 4px 20px rgba(0,0,0,0.05)}
     h1{margin:0 0 8px;font-size:18px;color:#111111}
     p.lead{text-align:justify;margin:0 0 18px;color:var(--muted)}
@@ -33,6 +34,12 @@
   </style>
 </head>
 <body>
+  <div class="logo-container">
+    <video autoplay muted playsinline loop poster="https://www.quantik.org/app/download/14970361630/Animated+Logo.mp4?t=1760858956" width="100%" style="object-fit:cover;object-position:center;border-radius:8px;">
+      <source src="https://www.quantik.org/app/download/14970361630/Animated+Logo.mp4?t=1760858956" type="video/mp4" />
+    </video>
+  </div>
+
   <main class="wrap">
     <h1>Altman Z‑Score Pricer</h1>
     <p class="lead" style="text-align:justify;">Enter company financials (in the same currency) and pick the model. The calculator supports: public manufacturing (original), private manufacturing (Z'), and private non-manufacturing (Z''). Results show score and a brief interpretation.</p>
